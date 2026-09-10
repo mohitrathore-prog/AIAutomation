@@ -20,6 +20,13 @@ __pycache__/
 
 # Uploads and temporary data
 uploads/
+data/uploads/
+data/*.db
+data/*.db-wal
+data/*.db-shm
+*.db
+*.db-wal
+*.db-shm
 scratch/
 *.log
 

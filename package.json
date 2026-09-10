@@ -6,7 +6,11 @@
   "scripts": {
     "start": "node server/server.js",
     "dev": "node server/server.js",
-    "test": "node tests/antiAiOveruse.test.js"
+    "seed": "node server/db/seed.js",
+    "test": "node tests/antiAiOveruse.test.js && node tests/integration.test.js && node tests/saasProduction.test.js",
+    "test:anti-ai": "node tests/antiAiOveruse.test.js",
+    "test:integration": "node tests/integration.test.js",
+    "test:saas": "node tests/saasProduction.test.js"
   },
   "keywords": [
     "enterprise",
@@ -20,8 +24,14 @@
   "author": "Antigravity",
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^13.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.7.0",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.3.0"
   }
 }

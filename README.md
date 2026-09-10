@@ -177,32 +177,74 @@ npm test
    * **Web Application**: `http://localhost:3050`
    * **Admin Portal**: `http://localhost:3050/#admin`
    * **Live Test Harness**: `http://localhost:3050/#live-tests`
+   * **My Workspace**: `http://localhost:3050/#workspace`
+   * **Plans & Billing**: `http://localhost:3050/#billing`
    * **Sample Report**: `http://localhost:3050/#sample-report`
 
 ---
 
-## 🏗 Project Architecture
+## 🏛 Production SaaS Architecture
+
+### 1. Multi-Tenant Database Layer (`server/db/`)
+* **36 Tables** with SQLite WAL mode and strict relational foreign keys.
+* Complete tenant isolation where every tenant-owned record contains `organisation_id`.
+* Automatic migrations, atomic ACID transactions, and double-entry credit ledger.
+
+### 2. Enterprise Authentication & Granular RBAC (`server/services/authService.js`)
+* **Password Security**: Bcrypt with work factor 10.
+* **Token Rotation**: Cryptographic session tokens with refresh token rotation and revocation.
+* **Fail-Closed Security**: In production (`NODE_ENV=production`), server strictly terminates if `JWT_SECRET` is default or weak.
+* **8 Enterprise Roles**: Super Admin, Owner, Admin, Assessment Manager, Architect, Analyst, Executive, Consultant.
+
+### 3. Monetisation, Entitlements & Pluggable Billing (`server/services/entitlementService.js`)
+* **Plans**: `EXPLORE` ($0), `ASSESS` ($499/mo), `TRANSFORM` ($1,999/mo), `ACCELERATE` ($4,999/mo).
+* **Enforced Limits**: Monthly assessment caps, team user limits, export formats (PDF, HTML, DOCX, EXCEL), custom scoring weights, and priority SLA.
+* **Credit Ledger**: Double-entry accounting for AI model runs, deep research, and document extraction.
+* **Billing Adapter**: Pluggable provider architecture with Mock provider and Stripe webhook endpoints.
+
+### 4. Document Ingestion & Process Discovery (`server/adapters/documentProcessor.js`)
+* Strict MIME validation (PDF, DOCX, XLSX, TXT, CSV) with 15MB file size limit.
+* Heuristic process discovery detecting Accounts Payable, IT Service Desk, Legal Review, and HR workflows.
+
+### 5. Cryptographic Report Verification (`server/services/reportService.js`)
+* Immutable report snapshots stamped with SHA-256 checksums to guarantee regulatory auditability.
+
+---
+
+## 🏗 Directory Structure
 
 ```text
 AIAutomation/
 ├── public/                       # Corporate Frontend Single-Page App
-│   ├── index.html                # Executive layout (Wizard, Dashboard, Modal, Admin, Tests)
+│   ├── index.html                # Executive layout (Wizard, Dashboard, Workspace, Billing, Admin, Tests)
 │   ├── styles/
 │   │   └── corporate.css         # Executive design system (Accessible, Slate/Navy theme)
 │   └── scripts/
-│       ├── app.js                # Frontend state, routing, wizard controller
+│       ├── app.js                # Frontend state, auth, routing, wizard controller
 │       ├── matrix.js             # Interactive 2x2 Opportunity Matrix SVG renderer
 │       └── admin.js              # Admin portal management controller
 ├── server/                       # Backend Application & Services
-│   ├── server.js                 # Express bootstrap & static file server
+│   ├── server.js                 # Production Express gateway (Helmet, Rate-Limiting, Fail-Closed)
+│   ├── db/                       # Database Persistence Layer
+│   │   ├── schema.sql            # 36-table schema definition
+│   │   ├── index.js              # Connection runner, transactions, and audit logger
+│   │   └── seed.js               # Multi-tenant RBAC, plans, and knowledge base seeder
+│   ├── middleware/               # Security & Gateway Middleware
+│   │   ├── auth.js               # JWT extraction, session verification, demo fallback
+│   │   ├── rbac.js               # Role & permission enforcement, tenant isolation
+│   │   └── entitlements.js       # Monthly quota and credit enforcement
+│   ├── services/                 # Core Business Services
+│   │   ├── authService.js        # Bcrypt, JWT rotation, session revocation
+│   │   ├── entitlementService.js # Quotas, plan features, credit ledger
+│   │   └── reportService.js      # Immutable snapshots & SHA-256 integrity checks
 │   ├── adapters/                 # Pluggable Service Adapters
+│   │   ├── billingAdapter.js     # Mock billing provider & Stripe webhook architecture
+│   │   ├── documentProcessor.js  # Multer upload, MIME validation, process extractor
 │   │   ├── aiProvider.js         # Unified LLM adapter (Mock, OpenAI, Azure, Claude)
 │   │   ├── researchAdapter.js    # Company footprint research (Tier 1/2/3 sources)
 │   │   ├── diagramAdapter.js     # Structured SVG workflow & architecture generator
 │   │   ├── visualAdapter.js      # Conceptual UI mockup renderer (with disclaimers)
-│   │   ├── pdfAdapter.js         # Printable executive report generator
-│   │   ├── authAdapter.js        # Multi-tenant organization isolation & RBAC
-│   │   └── storageAdapter.js     # Abstract file storage adapter
+│   │   └── pdfAdapter.js         # Printable executive report generator
 │   ├── engine/                   # Core Deterministic Logic Engines
 │   │   ├── solutionHierarchy.js  # 14-Level Solution-Selection Hierarchy
 │   │   ├── aiNecessityGate.js    # 8-Criteria AI Necessity Gate
@@ -218,15 +260,35 @@ AIAutomation/
 │   │   ├── industryTaxonomy.json    # 24 Selectable enterprise industries & standards
 │   │   └── researchEvidence.json    # Verified Tier-1/2 analyst citations
 │   └── routes/                   # REST API Endpoints
-│       ├── assessmentRoutes.js   # /api/evaluate, /api/questions, /api/reports
+│       ├── authRoutes.js         # /api/auth register, login, refresh, logout, me
+│       ├── billingRoutes.js      # /api/billing plans, entitlements, upgrade, invoices
+│       ├── documentRoutes.js     # /api/documents upload and list
+│       ├── assessmentRoutes.js   # /api/evaluate, /api/drafts, /api/assessments, /api/reports
 │       ├── adminRoutes.js        # /api/admin CRUD & audit logging
 │       └── testRoutes.js         # /api/tests live execution harness
 ├── tests/
-│   ├── antiAiOveruse.test.js     # CLI test suite (Tests 1-8, Acceptance A-L)
-│   └── integration.test.js       # End-to-end API route validation
+│   ├── antiAiOveruse.test.js     # Anti-AI Overuse CLI test suite (17 tests)
+│   ├── integration.test.js       # End-to-end API route validation (10 tests)
+│   └── saasProduction.test.js    # SaaS Production & Security test suite (8 scenarios)
 ├── .env.example                  # Environment configuration template
 ├── package.json
 └── README.md
+```
+
+---
+
+## 🧪 Comprehensive Automated Test Suites
+
+The platform includes **35 automated test assertions** verifying anti-AI overuse, end-to-end integration, and production SaaS security:
+
+```bash
+# Run all test suites
+npm test
+
+# Run individual test suites
+npm run test:anti-ai
+npm run test:integration
+npm run test:saas
 ```
 
 ---

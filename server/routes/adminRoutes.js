@@ -1,122 +1,285 @@
 /**
- * Admin Portal API Routes
- * Provides comprehensive CRUD for Knowledge Base, Technologies, Questions, Use Cases,
- * Research Sources, Pricing, Version Control, and System Audit Logs.
+ * Enterprise AI & Automation Opportunity Assessment Platform
+ * Secure Admin Portal API Routes
+ * Backed by Persistent Database, RBAC, and Immutable Audit Trail.
  */
 
 const express = require('express');
 const router = express.Router();
-const fs = require('fs');
-const path = require('path');
+const { requireAuth } = require('../middleware/auth');
+const { requireRole, requirePermission } = require('../middleware/rbac');
+const { query, get, run, recordAudit } = require('../db');
 
-const dataDir = path.join(__dirname, '../data');
-
-// In-Memory Audit Trail & Change History
-const auditLogs = [
-  { id: "log_001", timestamp: "2026-02-15T09:12:00Z", user: "Alexander Wright", action: "UPDATE_TECHNOLOGY", target: "SAP S/4HANA", details: "Updated lifecycle status to Current and verified pricing policy." },
-  { id: "log_002", timestamp: "2026-02-18T14:30:00Z", user: "Victoria Sterling", action: "ADD_USE_CASE", target: "it_aiops_log_clustering", details: "Added AIOps telemetry event correlation use case." },
-  { id: "log_003", timestamp: "2026-02-25T11:45:00Z", user: "Sarah Chen", action: "UPDATE_QUESTION", target: "q_fin_ap_03", details: "Tuned PO tolerance rule triggers for 3-way matching." }
-];
-
-// Helper to log audit event
-function recordAudit(user, action, target, details) {
-  auditLogs.unshift({
-    id: `log_${Date.now()}`,
-    timestamp: new Date().toISOString(),
-    user: user || "Enterprise Admin",
-    action,
-    target,
-    details
-  });
-}
+// All admin routes require authenticated session with Administrative / Architect role
+router.use(requireAuth);
+router.use(requireRole('SUPER_ADMIN', 'OWNER', 'ADMIN', 'ARCHITECT'));
 
 // 1. Admin Dashboard Stats
 router.get('/dashboard-stats', (req, res) => {
   try {
-    const useCases = JSON.parse(fs.readFileSync(path.join(dataDir, 'useCasesLibrary.json'), 'utf8'));
-    const technologies = JSON.parse(fs.readFileSync(path.join(dataDir, 'technologyCatalogue.json'), 'utf8'));
-    const questions = JSON.parse(fs.readFileSync(path.join(dataDir, 'questionsCatalogue.json'), 'utf8'));
-    const evidence = JSON.parse(fs.readFileSync(path.join(dataDir, 'researchEvidence.json'), 'utf8'));
+    const useCasesCount = get('SELECT COUNT(*) as count FROM use_cases').count;
+    const technologiesCount = get('SELECT COUNT(*) as count FROM technology_stack').count;
+    const questionsCount = get('SELECT COUNT(*) as count FROM questions').count;
+    const evidenceSourcesCount = get('SELECT COUNT(*) as count FROM evidence_catalog').count;
+    const activeAssessmentsCount = get('SELECT COUNT(*) as count FROM assessments WHERE organisation_id = ?', [req.organisationId]).count;
+
+    // Fetch tenant-scoped audit logs
+    const auditLogs = req.user.roleId === 'SUPER_ADMIN'
+      ? query('SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT 20')
+      : query('SELECT * FROM audit_logs WHERE organisation_id = ? ORDER BY created_at DESC LIMIT 20', [req.organisationId]);
 
     res.json({
-      useCasesCount: useCases.length,
-      technologiesCount: technologies.length,
-      questionsCount: questions.length,
-      evidenceSourcesCount: evidence.length,
-      activeAssessmentsCount: 14,
+      useCasesCount,
+      technologiesCount,
+      questionsCount,
+      evidenceSourcesCount,
+      activeAssessmentsCount,
       systemHealth: "Optimal",
-      demoModeActive: true,
-      auditLogs: auditLogs.slice(0, 10)
+      demoModeActive: process.env.DEMO_MODE !== 'false',
+      auditLogs
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// 2. Use Case CRUD
-router.post('/use-cases', (req, res) => {
+// 2. Use Case Management (Knowledge Base)
+router.post('/use-cases', requireRole('SUPER_ADMIN', 'OWNER', 'ADMIN'), (req, res) => {
   try {
-    const filePath = path.join(dataDir, 'useCasesLibrary.json');
-    const list = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    const newCase = { ...req.body, id: req.body.id || `uc_${Date.now()}`, version: "1.0", lastVerifiedDate: new Date().toISOString().split('T')[0] };
-    list.unshift(newCase);
-    fs.writeFileSync(filePath, JSON.stringify(list, null, 2));
-    recordAudit(req.headers['x-user-role'], "CREATE_USE_CASE", newCase.name, `Added new use case in ${newCase.department}`);
-    res.json({ success: true, useCase: newCase });
+    const uc = req.body;
+    const id = uc.id || `uc_${Date.now()}`;
+
+    run(`
+      INSERT INTO use_cases (
+        id, name, department, domain, problem_statement, recommended_solution_type,
+        solution_level, recommended_tier, ai_necessity_score, ai_necessity_rationale,
+        estimated_effort_weeks, estimated_cost_range, potential_roi_range, risk_level,
+        compliance_implications, replaces_human_tasks, status, version, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Published', '1.0', datetime('now'), datetime('now'))
+    `, [
+      id,
+      uc.name,
+      uc.department,
+      uc.domain || uc.department,
+      uc.problemStatement || uc.problem_statement || '',
+      uc.recommendedSolutionType || uc.recommended_solution_type || 'Workflow Automation',
+      uc.solutionLevel || uc.solution_level || 4,
+      uc.recommendedTier || uc.recommended_tier || 'Standard Automation',
+      uc.aiNecessityScore !== undefined ? uc.aiNecessityScore : 25,
+      uc.aiNecessityRationale || 'Standard automation capability verified.',
+      uc.estimatedEffortWeeks || 8,
+      uc.estimatedCostRange || '$25,000 - $50,000',
+      uc.potentialRoiRange || '200% - 300%',
+      uc.riskLevel || 'Low',
+      uc.complianceImplications || 'Standard audit controls apply',
+      uc.replacesHumanTasks ? 1 : 0
+    ]);
+
+    recordAudit({
+      organisationId: req.organisationId,
+      userId: req.user.id,
+      userEmail: req.user.email,
+      action: 'CREATE_USE_CASE',
+      entityType: 'UseCase',
+      entityId: id,
+      newValues: { name: uc.name, department: uc.department }
+    });
+
+    res.status(201).json({ success: true, useCase: { id, ...uc } });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-router.put('/use-cases/:id', (req, res) => {
+router.put('/use-cases/:id', requireRole('SUPER_ADMIN', 'OWNER', 'ADMIN'), (req, res) => {
   try {
-    const filePath = path.join(dataDir, 'useCasesLibrary.json');
-    let list = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    const index = list.findIndex(u => u.id === req.params.id);
-    if (index === -1) return res.status(404).json({ error: "Use case not found" });
+    const existing = get('SELECT * FROM use_cases WHERE id = ?', [req.params.id]);
+    if (!existing) return res.status(404).json({ error: "Use case not found" });
 
-    list[index] = { ...list[index], ...req.body, lastVerifiedDate: new Date().toISOString().split('T')[0] };
-    fs.writeFileSync(filePath, JSON.stringify(list, null, 2));
-    recordAudit(req.headers['x-user-role'], "UPDATE_USE_CASE", list[index].name, `Updated parameters for ${req.params.id}`);
-    res.json({ success: true, useCase: list[index] });
+    const uc = req.body;
+    run(`
+      UPDATE use_cases
+      SET name = COALESCE(?, name),
+          department = COALESCE(?, department),
+          domain = COALESCE(?, domain),
+          problem_statement = COALESCE(?, problem_statement),
+          recommended_solution_type = COALESCE(?, recommended_solution_type),
+          solution_level = COALESCE(?, solution_level),
+          recommended_tier = COALESCE(?, recommended_tier),
+          ai_necessity_score = COALESCE(?, ai_necessity_score),
+          ai_necessity_rationale = COALESCE(?, ai_necessity_rationale),
+          estimated_effort_weeks = COALESCE(?, estimated_effort_weeks),
+          estimated_cost_range = COALESCE(?, estimated_cost_range),
+          potential_roi_range = COALESCE(?, potential_roi_range),
+          risk_level = COALESCE(?, risk_level),
+          compliance_implications = COALESCE(?, compliance_implications),
+          updated_at = datetime('now')
+      WHERE id = ?
+    `, [
+      uc.name,
+      uc.department,
+      uc.domain,
+      uc.problemStatement || uc.problem_statement,
+      uc.recommendedSolutionType || uc.recommended_solution_type,
+      uc.solutionLevel || uc.solution_level,
+      uc.recommendedTier || uc.recommended_tier,
+      uc.aiNecessityScore !== undefined ? uc.aiNecessityScore : null,
+      uc.aiNecessityRationale,
+      uc.estimatedEffortWeeks,
+      uc.estimatedCostRange,
+      uc.potentialRoiRange,
+      uc.riskLevel,
+      uc.complianceImplications,
+      req.params.id
+    ]);
+
+    recordAudit({
+      organisationId: req.organisationId,
+      userId: req.user.id,
+      userEmail: req.user.email,
+      action: 'UPDATE_USE_CASE',
+      entityType: 'UseCase',
+      entityId: req.params.id,
+      oldValues: { name: existing.name },
+      newValues: { name: uc.name || existing.name }
+    });
+
+    res.json({ success: true, message: 'Use case updated successfully' });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// 3. Question CRUD
-router.post('/questions', (req, res) => {
+// 3. Question Management
+router.post('/questions', requireRole('SUPER_ADMIN', 'OWNER', 'ADMIN'), (req, res) => {
   try {
-    const filePath = path.join(dataDir, 'questionsCatalogue.json');
-    const list = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    const newQ = { ...req.body, id: req.body.id || `q_${Date.now()}`, status: "Active" };
-    list.push(newQ);
-    fs.writeFileSync(filePath, JSON.stringify(list, null, 2));
-    recordAudit(req.headers['x-user-role'], "CREATE_QUESTION", newQ.question, `Added question for ${newQ.department}`);
-    res.json({ success: true, question: newQ });
+    const q = req.body;
+    const id = q.id || `q_${Date.now()}`;
+
+    run(`
+      INSERT INTO questions (
+        id, section_id, department, domain, question, help_text, input_type,
+        options_json, skip_logic_json, display_order, is_required, status, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active', datetime('now'), datetime('now'))
+    `, [
+      id,
+      q.sectionId || 'sec_process',
+      q.department || 'General',
+      q.domain || 'General',
+      q.question,
+      q.helpText || '',
+      q.type || q.inputType || 'select',
+      JSON.stringify(q.options || []),
+      JSON.stringify(q.skipLogic || null),
+      q.displayOrder || 1,
+      q.isRequired !== undefined ? (q.isRequired ? 1 : 0) : 1
+    ]);
+
+    recordAudit({
+      organisationId: req.organisationId,
+      userId: req.user.id,
+      userEmail: req.user.email,
+      action: 'CREATE_QUESTION',
+      entityType: 'Question',
+      entityId: id,
+      newValues: { question: q.question, department: q.department }
+    });
+
+    res.status(201).json({ success: true, question: { id, ...q } });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// 4. Technology CRUD
-router.post('/technologies', (req, res) => {
+// 4. Technology Catalogue Management
+router.post('/technologies', requireRole('SUPER_ADMIN', 'OWNER', 'ADMIN'), (req, res) => {
   try {
-    const filePath = path.join(dataDir, 'technologyCatalogue.json');
-    const list = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    const newTech = { ...req.body, id: req.body.id || `tech_${Date.now()}`, lastVerified: new Date().toISOString().split('T')[0] };
-    list.push(newTech);
-    fs.writeFileSync(filePath, JSON.stringify(list, null, 2));
-    recordAudit(req.headers['x-user-role'], "CREATE_TECHNOLOGY", newTech.product, `Added tech record for ${newTech.vendor}`);
-    res.json({ success: true, technology: newTech });
+    const t = req.body;
+    const id = t.id || `tech_${Date.now()}`;
+
+    run(`
+      INSERT INTO technology_stack (
+        id, product, vendor, category, solution_level, typical_annual_cost, pricing_policy,
+        implementation_effort, lifecycle_status, strengths_json, limitations_json, status, version, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Published', '1.0', datetime('now'), datetime('now'))
+    `, [
+      id,
+      t.product,
+      t.vendor || 'Independent',
+      t.category || 'Platform',
+      t.solutionLevel || 3,
+      t.typicalAnnualCost || 'Vendor quotation required',
+      t.pricingPolicy || 'Explicit',
+      t.implementationEffort || 'Medium (4-8 weeks)',
+      t.lifecycleStatus || 'Current',
+      JSON.stringify(t.strengths || []),
+      JSON.stringify(t.limitations || [])
+    ]);
+
+    recordAudit({
+      organisationId: req.organisationId,
+      userId: req.user.id,
+      userEmail: req.user.email,
+      action: 'CREATE_TECHNOLOGY',
+      entityType: 'Technology',
+      entityId: id,
+      newValues: { product: t.product, vendor: t.vendor }
+    });
+
+    res.status(201).json({ success: true, technology: { id, ...t } });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// 5. Audit Log Retrieval
+// 5. Research Evidence Benchmark Management
+router.post('/evidence', requireRole('SUPER_ADMIN', 'OWNER', 'ADMIN'), (req, res) => {
+  try {
+    const ev = req.body;
+    const id = ev.id || `ev_${Date.now()}`;
+
+    run(`
+      INSERT INTO evidence_catalog (
+        id, claim, evidence_tier, source_name, source_url, publication_year,
+        confidence_level, audit_status, status, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Published', datetime('now'), datetime('now'))
+    `, [
+      id,
+      ev.claim,
+      ev.evidenceTier || 2,
+      ev.sourceName,
+      ev.sourceUrl || '',
+      ev.publicationYear || new Date().getFullYear(),
+      ev.confidenceLevel || 'High',
+      ev.auditStatus || 'Verified'
+    ]);
+
+    recordAudit({
+      organisationId: req.organisationId,
+      userId: req.user.id,
+      userEmail: req.user.email,
+      action: 'CREATE_EVIDENCE',
+      entityType: 'Evidence',
+      entityId: id,
+      newValues: { claim: ev.claim, source: ev.sourceName }
+    });
+
+    res.status(201).json({ success: true, evidence: { id, ...ev } });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// 6. Audit Trail Retrieval (Strictly scoped by organisation)
 router.get('/audit-logs', (req, res) => {
-  res.json(auditLogs);
+  try {
+    const logs = req.user.roleId === 'SUPER_ADMIN'
+      ? query('SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT 100')
+      : query('SELECT * FROM audit_logs WHERE organisation_id = ? ORDER BY created_at DESC LIMIT 100', [req.organisationId]);
+    res.json(logs);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 module.exports = router;

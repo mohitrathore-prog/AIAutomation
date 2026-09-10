@@ -27,15 +27,26 @@
         </div>
       </div>
 
+      <!-- Tenant & Plan Identity Bar -->
+      <div id="tenant-identity-bar" style="display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.06); padding: 4px 12px; border-radius: 6px; font-size: 12px; border: 1px solid rgba(255,255,255,0.1);">
+        <div style="display: flex; flex-direction: column;">
+          <span id="nav-org-name" style="font-weight: 700; color: #f8fafc;">Acme Global Manufacturing</span>
+          <span id="nav-user-role" style="font-size: 10px; color: #94a3b8;">Victoria Sterling (Owner)</span>
+        </div>
+        <span id="nav-plan-badge" class="badge" style="background: #2563eb; color: #fff; font-size: 10px; padding: 2px 6px;">Transform Plan</span>
+        <span id="nav-credits-badge" style="background: #0f766e; color: #ccfbf1; font-weight: 700; font-size: 11px; padding: 2px 8px; border-radius: 4px;">500 Credits</span>
+        <button onclick="App.openAuthModal()" style="background: transparent; border: 1px solid #475569; color: #cbd5e1; font-size: 11px; padding: 3px 8px; border-radius: 4px; cursor: pointer;">Switch Account</button>
+      </div>
+
       <ul class="corp-nav-links">
         <li><button class="nav-link-btn active" data-nav="home" data-view="home">Home</button></li>
-        <li><button class="nav-link-btn" data-nav="how-it-works" data-view="how-it-works">How It Works</button></li>
-        <li><button class="nav-link-btn" data-nav="services" data-view="services">Services</button></li>
-        <li><button class="nav-link-btn" data-nav="insights" data-view="insights">Insights</button></li>
+        <li><button class="nav-link-btn" data-nav="assessment" data-view="assessment">Assessment Wizard</button></li>
+        <li><button class="nav-link-btn" data-nav="workspace" data-view="workspace">My Workspace</button></li>
+        <li><button class="nav-link-btn" data-nav="billing" data-view="billing">Plans &amp; Credits</button></li>
         <li><button class="nav-link-btn" data-nav="sample-report" data-view="sample-report">Sample Report</button></li>
         <li><button class="nav-link-btn" data-nav="live-tests" data-view="live-tests">Live Tests</button></li>
         <li><button class="nav-link-btn" data-nav="admin" data-view="admin">Admin Portal</button></li>
-        <li><button class="btn-cta-primary" data-nav="assessment">Start Assessment</button></li>
+        <li><button class="btn-cta-primary" data-nav="assessment" style="padding: 6px 14px; font-size: 13px;">Start Assessment</button></li>
       </ul>
     </div>
   </header>
@@ -821,12 +832,220 @@
 
         <!-- Admin Tab: Audit Logs -->
         <div id="admin-pane-audit" class="admin-tab-pane">
-          <div id="admin-audit-full-list"></div>
+    <!-- -----------------------------------------------------------------------
+         VIEW: MY WORKSPACE (ASSESSMENTS, DRAFTS, REPORTS, DOCUMENTS)
+         ----------------------------------------------------------------------- -->
+    <section id="view-workspace" class="view-section">
+      <div class="hero-banner" style="margin-bottom: 24px; padding: 24px 32px;">
+        <div class="hero-badge">Tenant Multi-User Workspace</div>
+        <h1 class="hero-title" style="font-size: 26px;">Organisation Assessments &amp; Deliverables</h1>
+        <p class="hero-subtitle" style="font-size: 14px; margin-bottom: 0;">
+          All enterprise assessments, autosaved progress drafts, immutable cryptographic reports, and uploaded process artifacts are isolated to your tenant organization.
+        </p>
+      </div>
+
+      <!-- Workspace Sub-tabs -->
+      <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
+        <button class="ws-tab-btn active" onclick="App.switchWorkspaceTab('assessments')" id="wstab-btn-assessments">Completed Assessments</button>
+        <button class="ws-tab-btn" onclick="App.switchWorkspaceTab('drafts')" id="wstab-btn-drafts">Cloud Drafts</button>
+        <button class="ws-tab-btn" onclick="App.switchWorkspaceTab('reports')" id="wstab-btn-reports">Immutable Reports</button>
+        <button class="ws-tab-btn" onclick="App.switchWorkspaceTab('documents')" id="wstab-btn-documents">Process Documents &amp; Extraction</button>
+      </div>
+
+      <!-- Tab Pane 1: Assessments -->
+      <div id="wspane-assessments" class="ws-pane active">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 style="font-size: 18px;">Finalized Enterprise Assessments</h2>
+          <button class="btn-cta-primary" data-nav="assessment">+ New Opportunity Assessment</button>
         </div>
+        <div id="workspace-assessments-list" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #fff;"></div>
+      </div>
+
+      <!-- Tab Pane 2: Drafts -->
+      <div id="wspane-drafts" class="ws-pane" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 style="font-size: 18px;">In-Progress Assessment Drafts</h2>
+          <span style="font-size: 13px; color: #64748b;">Autosaved progress can be resumed from any corporate terminal.</span>
+        </div>
+        <div id="workspace-drafts-list" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #fff;"></div>
+      </div>
+
+      <!-- Tab Pane 3: Immutable Reports -->
+      <div id="wspane-reports" class="ws-pane" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 style="font-size: 18px;">Cryptographic Report Snapshots</h2>
+          <span style="font-size: 13px; color: #64748b;">SHA-256 tamper-evident verification ensures regulatory compliance and governance auditability.</span>
+        </div>
+        <div id="workspace-reports-list" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #fff;"></div>
+      </div>
+
+      <!-- Tab Pane 4: Documents -->
+      <div id="wspane-documents" class="ws-pane" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 style="font-size: 18px;">Process Documents &amp; SOP Ingestion Pipeline</h2>
+        </div>
+        
+        <!-- Document Upload Card -->
+        <div style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 8px; padding: 24px; text-align: center; margin-bottom: 20px;">
+          <div style="font-size: 28px; margin-bottom: 8px;">📄</div>
+          <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 4px;">Upload Process Documentation, SOPs, or Contracts</h3>
+          <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">Supported formats: PDF (.pdf), Word (.docx), Excel (.xlsx), Plain Text (.txt), CSV (.csv) up to 15MB.</p>
+          <input type="file" id="doc-file-input" style="display: none;" onchange="App.handleDocumentUpload(this.files[0])" accept=".pdf,.docx,.xlsx,.txt,.csv">
+          <button class="btn-cta-primary" onclick="document.getElementById('doc-file-input').click()">Select Document to Ingest</button>
+          <div id="doc-upload-status" style="margin-top: 12px; font-size: 13px; font-weight: 600;"></div>
+        </div>
+
+        <div id="workspace-documents-list" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #fff;"></div>
       </div>
     </section>
 
+    <!-- -----------------------------------------------------------------------
+         VIEW: PLANS & BILLING
+         ----------------------------------------------------------------------- -->
+    <section id="view-billing" class="view-section">
+      <div class="hero-banner" style="margin-bottom: 24px; padding: 24px 32px;">
+        <div class="hero-badge">Enterprise Subscription &amp; Credits</div>
+        <h1 class="hero-title" style="font-size: 26px;">Entitlements &amp; Resource Allocation</h1>
+        <p class="hero-subtitle" style="font-size: 14px; margin-bottom: 0;">
+          Transparent subscription tiers, assessment quota limits, and AI credit ledger accounting.
+        </p>
+      </div>
+
+      <!-- Current Quota & Usage Bar -->
+      <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
+        <div>
+          <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">Active Plan</div>
+          <div id="billing-active-plan" style="font-size: 20px; font-weight: 800; color: #0f172a; margin-top: 4px;">Transform (Enterprise)</div>
+          <div style="font-size: 12px; color: #16a34a; font-weight: 600;">Renews Monthly</div>
+        </div>
+        <div>
+          <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">Monthly Assessment Quota</div>
+          <div id="billing-quota-text" style="font-size: 20px; font-weight: 800; color: #0f172a; margin-top: 4px;">1 / 50 Used</div>
+          <div style="font-size: 12px; color: #64748b;">49 Assessments Remaining</div>
+        </div>
+        <div>
+          <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">AI &amp; Assessment Credits</div>
+          <div id="billing-credits-text" style="font-size: 20px; font-weight: 800; color: #0d9488; margin-top: 4px;">500 Credits</div>
+          <div style="font-size: 12px; color: #64748b;">Deducted on heavy model runs</div>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: flex-end;">
+          <button class="btn-cta-primary" onclick="App.buyCreditsModal()" style="font-size: 13px; padding: 8px 16px;">+ Purchase Credits</button>
+        </div>
+      </div>
+
+      <!-- Plan Cards Grid -->
+      <h2 style="font-size: 20px; margin-bottom: 14px;">Available Subscription Plans</h2>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px;">
+        
+        <!-- Explore -->
+        <div class="plan-card" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; background: #fff;">
+          <div style="font-size: 16px; font-weight: 800; color: #0f172a;">EXPLORE</div>
+          <div style="font-size: 26px; font-weight: 800; margin: 8px 0;">$0<span style="font-size: 13px; color: #64748b; font-weight: 500;"> / month</span></div>
+          <div style="font-size: 12px; color: #64748b; margin-bottom: 16px;">Single user sandbox to test the AI Necessity Gate on initial workflows.</div>
+          <ul style="font-size: 12px; line-height: 1.8; color: #334155; margin-bottom: 20px; padding-left: 18px;">
+            <li>2 Assessments / month</li>
+            <li>1 User Account</li>
+            <li>Standard PDF Exports</li>
+            <li>Core 14-Level Solution Hierarchy</li>
+          </ul>
+          <button class="btn-cta-secondary" style="width: 100%; font-size: 13px;" onclick="App.upgradePlan('EXPLORE')">Current / Free</button>
+        </div>
+
+        <!-- Assess -->
+        <div class="plan-card" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; background: #fff;">
+          <div style="font-size: 16px; font-weight: 800; color: #0f172a;">ASSESS</div>
+          <div style="font-size: 26px; font-weight: 800; margin: 8px 0;">$499<span style="font-size: 13px; color: #64748b; font-weight: 500;"> / month</span></div>
+          <div style="font-size: 12px; color: #64748b; margin-bottom: 16px;">Departmental teams needing multi-user collaboration and detailed ROI sensitivity.</div>
+          <ul style="font-size: 12px; line-height: 1.8; color: #334155; margin-bottom: 20px; padding-left: 18px;">
+            <li>10 Assessments / month</li>
+            <li>5 Team Users</li>
+            <li>PDF &amp; HTML Deliverables</li>
+            <li>Live Company Research Adapter</li>
+          </ul>
+          <button class="btn-cta-primary" style="width: 100%; font-size: 13px;" onclick="App.upgradePlan('ASSESS')">Select Assess Plan</button>
+        </div>
+
+        <!-- Transform (Highlighted) -->
+        <div class="plan-card" style="border: 2px solid #2563eb; border-radius: 8px; padding: 20px; background: #eff6ff; position: relative;">
+          <div style="position: absolute; top: -10px; right: 16px; background: #2563eb; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px;">RECOMMENDED</div>
+          <div style="font-size: 16px; font-weight: 800; color: #1e3a8a;">TRANSFORM</div>
+          <div style="font-size: 26px; font-weight: 800; color: #1e3a8a; margin: 8px 0;">$1,999<span style="font-size: 13px; color: #64748b; font-weight: 500;"> / month</span></div>
+          <div style="font-size: 12px; color: #475569; margin-bottom: 16px;">Enterprise transformation offices requiring custom scoring weights &amp; advanced exports.</div>
+          <ul style="font-size: 12px; line-height: 1.8; color: #1e293b; margin-bottom: 20px; padding-left: 18px;">
+            <li>50 Assessments / month</li>
+            <li>25 Team Users &amp; RBAC</li>
+            <li>All Formats (PDF, DOCX, EXCEL)</li>
+            <li>Custom Scoring Weights &amp; Priority SLA</li>
+          </ul>
+          <button class="btn-cta-primary" style="width: 100%; font-size: 13px; background: #1d4ed8;" onclick="App.upgradePlan('TRANSFORM')">Active Plan</button>
+        </div>
+
+        <!-- Accelerate -->
+        <div class="plan-card" style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; background: #fff;">
+          <div style="font-size: 16px; font-weight: 800; color: #0f172a;">ACCELERATE</div>
+          <div style="font-size: 26px; font-weight: 800; margin: 8px 0;">$4,999<span style="font-size: 13px; color: #64748b; font-weight: 500;"> / month</span></div>
+          <div style="font-size: 12px; color: #64748b; margin-bottom: 16px;">Global consultancies requiring white-label branding, unlimited assessments, and dedicated SLA.</div>
+          <ul style="font-size: 12px; line-height: 1.8; color: #334155; margin-bottom: 20px; padding-left: 18px;">
+            <li>Unlimited Assessments</li>
+            <li>Unlimited Users &amp; Tenants</li>
+            <li>White-Label Custom Branding</li>
+            <li>Dedicated Solutions Architect</li>
+          </ul>
+          <button class="btn-cta-primary" style="width: 100%; font-size: 13px;" onclick="App.upgradePlan('ACCELERATE')">Upgrade to Accelerate</button>
+        </div>
+
+      </div>
+
+      <!-- Invoice History Table -->
+      <h2 style="font-size: 18px; margin-bottom: 12px;">Billing Invoices</h2>
+      <div id="billing-invoices-list" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #fff;"></div>
+    </section>
+
   </main>
+
+  <!-- =========================================================================
+       MODAL: AUTHENTICATION & ORG SWITCHER
+       ========================================================================= -->
+  <div id="auth-modal" class="modal-overlay">
+    <div class="modal-box" style="max-width: 500px;">
+      <div class="modal-header">
+        <div>
+          <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">IDENTITY &amp; ACCESS CONTROL</div>
+          <div style="font-size: 18px; font-weight: 800; color: #0f172a;">Corporate Authentication</div>
+        </div>
+        <button style="background: transparent; border: none; font-size: 20px; cursor: pointer; color: #64748b;" onclick="App.closeAuthModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <div style="margin-bottom: 16px;">
+          <label style="font-size: 12px; font-weight: 600; color: #475569; display: block; margin-bottom: 6px;">Quick Tenant &amp; Role Switcher (Pre-Seeded Accounts):</label>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button class="btn-cta-secondary" style="text-align: left; padding: 10px; font-size: 12px;" onclick="App.loginAs('admin@enterprise.internal', 'Admin2026!')">
+              <strong>Victoria Sterling</strong> (Acme Global Manufacturing) - <em>Owner / Transform Plan</em>
+            </button>
+            <button class="btn-cta-secondary" style="text-align: left; padding: 10px; font-size: 12px;" onclick="App.loginAs('architect@enterprise.internal', 'Admin2026!')">
+              <strong>Alexander Wright</strong> (Acme Global Manufacturing) - <em>Enterprise Architect</em>
+            </button>
+            <button class="btn-cta-secondary" style="text-align: left; padding: 10px; font-size: 12px;" onclick="App.loginAs('manager@apex.internal', 'Admin2026!')">
+              <strong>Marcus Vance</strong> (Apex Financial Group) - <em>Assessment Manager / Assess Plan</em>
+            </button>
+            <button class="btn-cta-secondary" style="text-align: left; padding: 10px; font-size: 12px;" onclick="App.loginAs('trial@nimbus.internal', 'Admin2026!')">
+              <strong>Thomas Bradley</strong> (Nimbus Logistics) - <em>Free Trial / Explore Plan</em>
+            </button>
+            <button class="btn-cta-secondary" style="text-align: left; padding: 10px; font-size: 12px;" onclick="App.loginAs('superadmin@enterprise.internal', 'Admin2026!')">
+              <strong>System Super Administrator</strong> - <em>Global Administration</em>
+            </button>
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid #e2e8f0; padding-top: 16px;">
+          <div style="font-size: 13px; font-weight: 700; margin-bottom: 8px;">Direct Login</div>
+          <input type="email" id="auth-email-input" placeholder="corporate.email@enterprise.com" style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; margin-bottom: 8px;">
+          <input type="password" id="auth-pwd-input" placeholder="Password" style="width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; margin-bottom: 12px;">
+          <button class="btn-cta-primary" style="width: 100%; font-size: 13px; padding: 10px;" onclick="App.loginDirect()">Sign In</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- =========================================================================
        MODAL: DETAILED USE CASE DEEP DIVE (40-POINT SPECIFICATION)

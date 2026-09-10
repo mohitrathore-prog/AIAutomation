@@ -11,6 +11,11 @@ window.AdminPortal = {
     await this.loadDashboardStats();
   },
 
+  getAuthHeaders() {
+    const token = window.App?.authToken || localStorage.getItem('auth_token');
+    return token ? { 'Authorization': `Bearer ${token}` } : { 'x-demo-auth': 'true' };
+  },
+
   bindEvents() {
     const tabBtns = document.querySelectorAll('.admin-tab-btn');
     tabBtns.forEach(btn => {
@@ -39,9 +44,11 @@ window.AdminPortal = {
 
   async loadDashboardStats() {
     try {
-      const res = await fetch('/api/admin/dashboard-stats');
+      const res = await fetch('/api/admin/dashboard-stats', {
+        headers: this.getAuthHeaders()
+      });
       const data = await res.json();
-      
+
       const elUc = document.getElementById('stat-use-cases');
       const elTech = document.getElementById('stat-technologies');
       const elQ = document.getElementById('stat-questions');
@@ -55,15 +62,22 @@ window.AdminPortal = {
       // Render recent logs
       const logContainer = document.getElementById('admin-recent-logs');
       if (logContainer && data.auditLogs) {
-        logContainer.innerHTML = data.auditLogs.map(l => `
-          <div style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; font-size: 12px;">
-            <div>
-              <strong>${l.user}</strong>: <span style="color: #2563eb;">${l.action}</span> on <em>${l.target}</em>
-              <div style="color: #64748b; font-size: 11px;">${l.details}</div>
+        logContainer.innerHTML = data.auditLogs.map(l => {
+          const user = l.user_email || l.user || 'System';
+          const action = l.action;
+          const target = l.entity_type ? `${l.entity_type} (${l.entity_id || ''})` : (l.target || 'System');
+          const details = l.new_values || l.details || '';
+          const time = new Date(l.created_at || l.timestamp).toLocaleTimeString();
+          return `
+            <div style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; font-size: 12px;">
+              <div>
+                <strong>${user}</strong>: <span style="color: #2563eb;">${action}</span> on <em>${target}</em>
+                <div style="color: #64748b; font-size: 11px;">${typeof details === 'object' ? JSON.stringify(details) : details}</div>
+              </div>
+              <div style="color: #94a3b8; font-size: 10px;">${time}</div>
             </div>
-            <div style="color: #94a3b8; font-size: 10px;">${new Date(l.timestamp).toLocaleTimeString()}</div>
-          </div>
-        `).join('');
+          `;
+        }).join('');
       }
     } catch (e) {
       console.error("Admin stats failed:", e);
@@ -76,7 +90,7 @@ window.AdminPortal = {
     listContainer.innerHTML = `<div style="padding: 20px; text-align: center;">Loading use cases...</div>`;
 
     try {
-      const res = await fetch('/api/use-cases');
+      const res = await fetch('/api/use-cases', { headers: this.getAuthHeaders() });
       const items = await res.json();
 
       listContainer.innerHTML = `
@@ -91,28 +105,25 @@ window.AdminPortal = {
               <th>Name</th>
               <th>Department</th>
               <th>Solution Type</th>
-              <th>AI Req?</th>
-              <th>Est. Savings</th>
-              <th>Actions</th>
+              <th>Level</th>
+              <th>AI Score</th>
+              <th>Cost Range</th>
             </tr>
           </thead>
           <tbody>
-            ${items.slice(0, 25).map(u => `
+            ${items.slice(0, 35).map(u => `
               <tr>
                 <td><code>${u.id}</code></td>
                 <td><strong>${u.name}</strong></td>
-                <td>${u.department}</td>
-                <td>${u.recommendedSolutionType}</td>
-                <td><span class="badge ${u.aiNecessity === 'Yes' ? 'badge-ai' : 'badge-automation'}">${u.aiNecessity}</span></td>
-                <td>$${Math.round(u.expectedAnnualSavingsUSD).toLocaleString()}</td>
-                <td>
-                  <button style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;" onclick="AdminPortal.editUseCase('${u.id}')">Edit</button>
-                </td>
+                <td><span class="badge badge-tactical">${u.department}</span></td>
+                <td>${u.recommendedSolutionType || u.recommended_solution_type}</td>
+                <td>Level ${u.solutionLevel || u.solution_level || 4}</td>
+                <td><span class="badge ${u.aiNecessityScore > 50 ? 'badge-ai' : 'badge-automation'}">${u.aiNecessityScore || 25}/100</span></td>
+                <td>${u.estimatedCostRange || u.estimated_cost_range || '$25k - $50k'}</td>
               </tr>
             `).join('')}
           </tbody>
         </table>
-        ${items.length > 25 ? `<div style="text-align: center; padding: 10px; color: #64748b; font-size: 11px;">Showing first 25 of ${items.length} records. Search or filter in production.</div>` : ''}
       `;
     } catch (e) {
       listContainer.innerHTML = `<div style="color: red; padding: 20px;">Failed to load use cases: ${e.message}</div>`;
@@ -120,17 +131,17 @@ window.AdminPortal = {
   },
 
   async loadTechnologies() {
-    const listContainer = document.getElementById('admin-technologies-list');
+    const listContainer = document.getElementById('admin-tech-list');
     if (!listContainer) return;
 
     try {
-      const res = await fetch('/api/technologies');
+      const res = await fetch('/api/technologies', { headers: this.getAuthHeaders() });
       const items = await res.json();
 
       listContainer.innerHTML = `
         <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 13px; font-weight: 600; color: #334155;">Showing ${items.length} Enterprise Systems</span>
-          <button class="btn-cta-primary" style="font-size: 12px; padding: 6px 12px;" onclick="AdminPortal.showCreateModal('technology')">+ Add System Record</button>
+          <span style="font-size: 13px; font-weight: 600; color: #334155;">Showing ${items.length} Evaluated Enterprise Platforms</span>
+          <button class="btn-cta-primary" style="font-size: 12px; padding: 6px 12px;" onclick="AdminPortal.showCreateModal('technology')">+ Add Technology</button>
         </div>
         <table class="comp-table" style="font-size: 12px;">
           <thead>
@@ -138,9 +149,9 @@ window.AdminPortal = {
               <th>Vendor</th>
               <th>Product</th>
               <th>Category</th>
-              <th>Lifecycle</th>
-              <th>Pricing Mode</th>
-              <th>Last Verified</th>
+              <th>Solution Level</th>
+              <th>Pricing Policy</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -149,9 +160,9 @@ window.AdminPortal = {
                 <td><strong>${t.vendor}</strong></td>
                 <td>${t.product}</td>
                 <td>${t.category}</td>
-                <td><span class="badge ${t.lifecycleStatus === 'Current' ? 'badge-automation' : 'badge-explore'}">${t.lifecycleStatus}</span></td>
-                <td>${t.pricing.includes('$') ? t.pricing.substring(0, 20) + '...' : '<span style="color: #64748b;">Quotation Required</span>'}</td>
-                <td>${t.lastVerified || '2026-02-15'}</td>
+                <td>Level ${t.solution_level || t.solutionLevel || 3}</td>
+                <td>${t.typical_annual_cost || t.typicalAnnualCost || '<span style="color: #64748b;">Vendor quotation required</span>'}</td>
+                <td><span class="badge ${t.lifecycle_status === 'Current' || t.lifecycleStatus === 'Current' ? 'badge-automation' : 'badge-explore'}">${t.lifecycle_status || t.lifecycleStatus || 'Current'}</span></td>
               </tr>
             `).join('')}
           </tbody>
@@ -167,7 +178,7 @@ window.AdminPortal = {
     if (!listContainer) return;
 
     try {
-      const res = await fetch('/api/questions');
+      const res = await fetch('/api/questions', { headers: this.getAuthHeaders() });
       const items = await res.json();
 
       listContainer.innerHTML = `
@@ -183,7 +194,7 @@ window.AdminPortal = {
               <th>Domain</th>
               <th>Question Text</th>
               <th>Type</th>
-              <th>Weight</th>
+              <th>Order</th>
             </tr>
           </thead>
           <tbody>
@@ -193,8 +204,8 @@ window.AdminPortal = {
                 <td>${q.department}</td>
                 <td>${q.domain}</td>
                 <td>${q.question}</td>
-                <td><span class="badge badge-tactical">${q.answerType}</span></td>
-                <td>${q.scoringWeight}/10</td>
+                <td><span class="badge badge-tactical">${q.type || q.input_type || 'select'}</span></td>
+                <td>#${q.displayOrder || q.display_order || 1}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -210,7 +221,7 @@ window.AdminPortal = {
     if (!listContainer) return;
 
     try {
-      const res = await fetch('/api/admin/audit-logs');
+      const res = await fetch('/api/admin/audit-logs', { headers: this.getAuthHeaders() });
       const items = await res.json();
 
       listContainer.innerHTML = `
@@ -220,20 +231,26 @@ window.AdminPortal = {
               <th>Timestamp</th>
               <th>User</th>
               <th>Action</th>
-              <th>Target</th>
+              <th>Entity</th>
               <th>Details</th>
             </tr>
           </thead>
           <tbody>
-            ${items.map(l => `
-              <tr>
-                <td><code>${new Date(l.timestamp).toLocaleString()}</code></td>
-                <td><strong>${l.user}</strong></td>
-                <td><span class="badge badge-strategic">${l.action}</span></td>
-                <td>${l.target}</td>
-                <td style="color: #475569;">${l.details}</td>
-              </tr>
-            `).join('')}
+            ${items.map(l => {
+              const time = new Date(l.created_at || l.timestamp).toLocaleString();
+              const user = l.user_email || l.user || 'System';
+              const entity = l.entity_type ? `${l.entity_type} (${l.entity_id || ''})` : (l.target || 'Platform');
+              const details = l.new_values || l.details || '';
+              return `
+                <tr>
+                  <td><code>${time}</code></td>
+                  <td><strong>${user}</strong></td>
+                  <td><span class="badge badge-strategic">${l.action}</span></td>
+                  <td>${entity}</td>
+                  <td style="color: #475569;">${typeof details === 'object' ? JSON.stringify(details) : details}</td>
+                </tr>
+              `;
+            }).join('')}
           </tbody>
         </table>
       `;
@@ -244,9 +261,5 @@ window.AdminPortal = {
 
   showCreateModal(type) {
     alert(`Admin CRUD: Form modal for creating new ${type}. In production, opens full schema editor with JSON validation.`);
-  },
-
-  editUseCase(id) {
-    alert(`Admin CRUD: Editing use case ${id}. Parameters: Problem, Hierarchy level, AI necessity gates, and ROI drivers.`);
   }
 };
