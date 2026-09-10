@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - NODE_ENV=production
+      - ENCRYPTION_SECRET=antigravity_factory_secret_2026
+      - SUPABASE_URL=https://your-supabase-id.supabase.co
+      - SUPABASE_KEY=your-supabase-service-role-key
+    volumes:
+      - backend-renders:/app/public/renders
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../backend/Dockerfile # Next.js production build setup
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:4000/api
+    depends_on:
+      - backend
+    restart: always
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=UTC
+    volumes:
+      - n8n-data:/home/node/.n8n
+    restart: always
+
+volumes:
+  backend-renders:
+  n8n-data:

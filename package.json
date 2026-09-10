@@ -1,0 +1,27 @@
+{
+  "name": "enterprise-ai-automation-assessment",
+  "version": "1.0.0",
+  "description": "Enterprise AI & Automation Opportunity Assessment Platform - The right solution first. AI only when necessary.",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node server/server.js",
+    "test": "node tests/antiAiOveruse.test.js"
+  },
+  "keywords": [
+    "enterprise",
+    "ai",
+    "automation",
+    "assessment",
+    "roi",
+    "consulting",
+    "process-improvement"
+  ],
+  "author": "Antigravity",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
+}

@@ -1,0 +1,170 @@
+[
+  {
+    "id": "banking",
+    "name": "Banking",
+    "subIndustries": ["Retail Banking", "Commercial Banking", "Investment Banking", "Wealth Management", "Payments & Cards"],
+    "regulatoryStandards": ["SOX", "PCI-DSS", "Basel III", "GDPR", "GLBA", "FINRA"],
+    "dataSensitivity": "High"
+  },
+  {
+    "id": "insurance",
+    "name": "Insurance",
+    "subIndustries": ["Life & Annuity", "Property & Casualty", "Health Insurance", "Reinsurance", "Commercial Lines"],
+    "regulatoryStandards": ["Solvency II", "NAIC", "GDPR", "HIPAA", "SOX"],
+    "dataSensitivity": "High"
+  },
+  {
+    "id": "financial_services",
+    "name": "Financial Services",
+    "subIndustries": ["Asset Management", "Fintech", "Brokerage", "Mortgage Lending", "Custody & Settlement"],
+    "regulatoryStandards": ["SEC Rules", "MiFID II", "CFTC", "GDPR"],
+    "dataSensitivity": "High"
+  },
+  {
+    "id": "manufacturing",
+    "name": "Manufacturing",
+    "subIndustries": ["Industrial Equipment", "High-Tech Electronics", "Chemicals", "Aerospace & Defense", "Process Manufacturing"],
+    "regulatoryStandards": ["ISO 9001", "ISO 27001", "OSHA", "ITAR"],
+    "dataSensitivity": "Medium"
+  },
+  {
+    "id": "automotive",
+    "name": "Automotive",
+    "subIndustries": ["OEM Vehicle Manufacturing", "Auto Components & Tier-1 Suppliers", "Electric Vehicles", "Dealership Networks"],
+    "regulatoryStandards": ["IATF 16949", "ISO 26262", "TISAX"],
+    "dataSensitivity": "Medium"
+  },
+  {
+    "id": "retail",
+    "name": "Retail",
+    "subIndustries": ["Department Stores", "Supermarkets & Grocery", "Apparel & Specialty", "Big Box Retail"],
+    "regulatoryStandards": ["PCI-DSS", "GDPR", "CCPA"],
+    "dataSensitivity": "Medium"
+  },
+  {
+    "id": "ecommerce",
+    "name": "E-commerce",
+    "subIndustries": ["Online Marketplaces", "Direct-to-Consumer (D2C)", "B2B E-commerce Platforms", "Subscription Services"],
+    "regulatoryStandards": ["PCI-DSS", "GDPR", "CCPA", "FTC Guidelines"],
+    "dataSensitivity": "Medium"
+  },
+  {
+    "id": "healthcare",
+    "name": "Healthcare",
+    "subIndustries": ["Hospital Systems", "Ambulatory & Clinics", "Healthtech & Telehealth", "Diagnostic Laboratories"],
+    "regulatoryStandards": ["HIPAA", "HITECH", "FDA 21 CFR Part 11", "Joint Commission"],
+    "dataSensitivity": "Restricted"
+  },
+  {
+    "id": "pharmaceuticals",
+    "name": "Pharmaceuticals & Life Sciences",
+    "subIndustries": ["Biotechnology", "Contract Research (CRO)", "Medical Devices", "Generic & Specialty Pharma"],
+    "regulatoryStandards": ["FDA GxP", "21 CFR Part 11", "EMA Guidelines", "HIPAA"],
+    "dataSensitivity": "Restricted"
+  },
+  {
+    "id": "telecom",
+    "name": "Telecom",
+    "subIndustries": ["Wireless Carriers", "Wireline & Broadband", "Satellite & Cable", "Enterprise Connectivity"],
+    "regulatoryStandards": ["FCC", "CPNI", "GDPR", "ISO 27001"],
+    "dataSensitivity": "Medium"
+  },
+  {
+    "id": "it_services",
+    "name": "IT Services & Consulting",
+    "subIndustries": ["Systems Integration", "Managed Services (MSP)", "Software Development", "BPO & GCCs"],
+    "regulatoryStandards": ["SOC 1 / SOC 2 Type II", "ISO 27001", "ISO 20000", "GDPR"],
+    "dataSensitivity": "Medium"
+  },
+  {
+    "id": "technology",
+    "name": "Technology & SaaS",
+    "subIndustries": ["Enterprise Software", "Cloud Infrastructure", "Cybersecurity", "Consumer Internet"],
+    "regulatoryStandards": ["SOC 2 Type II", "FedRAMP", "ISO 27001", "GDPR"],
+    "dataSensitivity": "Medium"
+  },
+  {
+    "id": "energy",
+    "name": "Energy & Renewables",
+    "subIndustries": ["Oil & Gas Exploration/Production", "Refining & Distribution", "Solar & Wind", "Clean Energy"],
+    "regulatoryStandards": ["NERC-CIP", "EPA", "FERC", "OSHA"],
+    "dataSensitivity": "High"
+  },
+  {
+    "id": "utilities",
+    "name": "Utilities",
+    "subIndustries": ["Electric Power Generation", "Water Distribution & Treatment", "Gas Distribution"],
+    "regulatoryStandards": ["NERC-CIP", "EPA Regulations", "Public Utilities Commission"],
+    "dataSensitivity": "High"
+  },
+  {
+    "id": "logistics",
+    "name": "Logistics & Freight",
+    "subIndustries": ["Third-Party Logistics (3PL)", "Freight Forwarding", "Maritime Shipping", "Courier & Last-Mile Delivery"],
+    "regulatoryStandards": ["DOT Regulations", "Customs & Border Protection", "IATA", "IMO"],
+    "dataSensitivity": "Low"
+  },
+  {
+    "id": "travel",
+    "name": "Travel & Aviation",
+    "subIndustries": ["Commercial Airlines", "Rail Networks", "Travel Management Companies", "Car Rental"],
+    "regulatoryStandards": ["FAA", "TSA", "ICAO", "PCI-DSS"],
+    "dataSensitivity": "Medium"
+  },
+  {
+    "id": "hospitality",
+    "name": "Hospitality & Leisure",
+    "subIndustries": ["Hotel Chains & Resorts", "Restaurants & Foodservice", "Gaming & Entertainment", "Cruises"],
+    "regulatoryStandards": ["PCI-DSS", "Local Health Codes", "GDPR"],
+    "dataSensitivity": "Low"
+  },
+  {
+    "id": "fmcg",
+    "name": "FMCG & CPG",
+    "subIndustries": ["Packaged Foods & Beverages", "Personal Care & Cosmetics", "Household Products"],
+    "regulatoryStandards": ["FDA", "FSMA", "ISO 22000", "Consumer Protection"],
+    "dataSensitivity": "Low"
+  },
+  {
+    "id": "consumer_goods",
+    "name": "Consumer Goods",
+    "subIndustries": ["Consumer Electronics", "Apparel & Footwear", "Home Appliances", "Furniture"],
+    "regulatoryStandards": ["CPSC", "RoHS / WEEE", "FCC"],
+    "dataSensitivity": "Low"
+  },
+  {
+    "id": "professional_services",
+    "name": "Professional Services",
+    "subIndustries": ["Management Consulting", "Audit & Accounting", "Legal Services", "Staffing & Recruiting"],
+    "regulatoryStandards": ["AICPA", "Bar Association Regulations", "GDPR"],
+    "dataSensitivity": "High"
+  },
+  {
+    "id": "government",
+    "name": "Government & Public Sector",
+    "subIndustries": ["Federal / National Agencies", "State / Provincial Governments", "Municipal & Local Authorities", "Defense"],
+    "regulatoryStandards": ["FedRAMP High", "NIST SP 800-53", "DoD IL5/IL6", "FISMA"],
+    "dataSensitivity": "Restricted"
+  },
+  {
+    "id": "education",
+    "name": "Education",
+    "subIndustries": ["Higher Education & Universities", "K-12 School Districts", "Edtech Platforms", "Corporate Training"],
+    "regulatoryStandards": ["FERPA", "COPPA", "Title IX"],
+    "dataSensitivity": "Medium"
+  },
+  {
+    "id": "real_estate",
+    "name": "Real Estate & Construction",
+    "subIndustries": ["Commercial Property Management", "Residential Leasing", "General Contracting", "REITs"],
+    "regulatoryStandards": ["Fair Housing Act", "OSHA", "Local Building Codes"],
+    "dataSensitivity": "Low"
+  },
+  {
+    "id": "media",
+    "name": "Media & Entertainment",
+    "subIndustries": ["Broadcasting & Cable", "Streaming Platforms", "Publishing & News", "Gaming & Interactive"],
+    "regulatoryStandards": ["FCC", "COPPA", "Copyright / DMCA", "GDPR"],
+    "dataSensitivity": "Low"
+  }
+]
